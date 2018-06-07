@@ -1,0 +1,25 @@
+{
+    "name": "Restaurant Reviews",
+    "short_name": "Resto Revs",
+    "icons": [{
+            "src": "img/restaurant-128.png",
+            "type": "image/png",
+            "sizes": "128x128"
+        },
+        {
+            "src": "img/restaurant-256.png",
+            "type": "image/png",
+            "sizes": "256x256"
+        },
+        {
+            "src": "img/restaurant-512.png",
+            "type": "image/png",
+            "sizes": "512x512"
+        }
+    ],
+    "start_url": "index.html",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#333",
+    "theme_color": "#333"
+}

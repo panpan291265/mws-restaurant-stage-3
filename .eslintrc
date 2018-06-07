@@ -1,0 +1,15 @@
+{
+    "plugins": [
+    ],
+    "parserOptions": {
+        "ecmaVersion": 6,
+        "sourceType": "module"
+    },
+    "rules": {
+        "no-console": "off",
+        "no-undef": "off",
+        "no-unused-vars": "off",
+        "no-empty": "off",
+        "no-useless-escape": "off"
+    }
+}
