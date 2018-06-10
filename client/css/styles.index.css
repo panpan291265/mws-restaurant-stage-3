@@ -122,6 +122,11 @@
   justify-content: center;
 }
 
+.restaurant-list-item-container.favorite {
+  background: rgba(255, 215, 0, 0.2);
+  border: 5px solid goldenrod;
+}
+
 .restaurant-list-item-container .container1 {
   width: 100%;
   order: 0;
@@ -159,14 +164,34 @@
   text-align: center;
 }
 
-.restaurant-list-item-container .restaurant-more-container {
-  display: inline-block;
-  margin: 16px auto 8px auto;
-  padding: 0;
-  text-align: center;
+.restaurant-list-item-container .restaurant-buttons-container {
   width: 100%;
   order: 3;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+}
+
+.restaurant-list-item-container .restaurant-more-container {
   text-align: center;
+  padding-top: 1px;
+}
+
+.restaurant-list-item-container .restaurant-fav-button,
+.restaurant-list-item-container .restaurant-write-review-button {
+  text-align: center;
+  margin: 2px 4px;
+}
+
+.restaurant-list-item-container .restaurant-fav-button {
+  opacity: 0.75;
+}
+
+.restaurant-list-item-container.favorite .restaurant-fav-button {
+  border: 2px solid goldenrod;
+  opacity: 1.0;
 }
 
 .restaurant-list-item-container h2.restaurant-name {
@@ -180,6 +205,11 @@
   text-transform: uppercase;
 }
 
+.restaurant-list-item-container.favorite h2.restaurant-name{
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
 .restaurant-list-item-container p {
   margin: 0;
   font-size: 1.0rem;
@@ -191,7 +221,8 @@
   text-decoration: none;
   text-transform: uppercase;
   font-size: 1.0rem;
-  padding: 8px;
+  margin: 2px 4px;
+  padding: 12px;
 }
 
 

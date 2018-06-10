@@ -197,7 +197,7 @@ createReviewHTML = (review) => {
   reviewHeader.appendChild(name);
 
   const date = document.createElement('div');
-  date.innerHTML = review.date;
+  date.innerHTML = new Date(review.updatedAt).toLocaleString();
   date.classList.add('review-date');
   reviewHeader.appendChild(date);
 

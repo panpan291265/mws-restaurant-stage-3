@@ -24,9 +24,9 @@ gulp.task('clean:images', function () {
 	return del(`${pathDestImages}/**/*`);
 });
 
-gulp.task('copy:images:app', function () {
+gulp.task('copy:images:restaurant', function () {
     return gulp.src([
-            `${pathSourceImages}/restaurant.png`
+            `${pathSourceImages}/restaurant.png`,
         ])
         .pipe(responsive({
             '*.png': [
@@ -55,6 +55,42 @@ gulp.task('copy:images:app', function () {
         .pipe(imageMin({ verbose: false }))
 		.pipe(gulp.dest(`${pathDestImages}`));
 });
+
+gulp.task('copy:images:buttons', function () {
+    return gulp.src([
+            `${pathSourceImages}/gold-medal.png`,
+            `${pathSourceImages}/write.png`
+        ])
+        .pipe(responsive({
+            '*.png': [
+                {
+                    width: 32,
+                    quality: 33,
+                    rename: { suffix: '-32'}
+                },
+                {
+                    width: 48,
+                    quality: 33,
+                    rename: { suffix: '-48'}
+                },
+                {
+                    width: 64,
+                    quality: 33,
+                    rename: { suffix: '-64'}
+                }
+            ]
+        }))
+        .pipe(imageMin({ verbose: false }))
+		.pipe(gulp.dest(`${pathDestImages}`));
+});
+
+gulp.task('copy:images:app', function () {
+	return runSequence(
+        'copy:images:restaurant',
+        'copy:images:buttons'
+	);
+});
+
 
 gulp.task('copy:images:data', function () {
 	return gulp.src(`${pathSourceImages}/**/*.jpg`)

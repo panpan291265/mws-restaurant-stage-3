@@ -204,8 +204,11 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
 createRestaurantHTML = restaurant => {
   const li = document.createElement('li');
 
+  const isFavorite = isFavoriteRestaurant(restaurant);
+
   const itemContainer = document.createElement('div');
-  itemContainer.className = 'restaurant-list-item-container';
+  itemContainer.id = `restaurant-container-${restaurant.id}`;
+  itemContainer.className = `restaurant-list-item-container${isFavorite ? ' favorite' : ''}`;
   li.append(itemContainer);
 
   const container1 = document.createElement('div');
@@ -249,9 +252,13 @@ createRestaurantHTML = restaurant => {
   address.setAttribute('tabindex', '0');
   container2.append(address);
 
+  const buttonsContainer = document.createElement('div');
+  buttonsContainer.className = 'restaurant-buttons-container';
+  container2.append(buttonsContainer);
+
   const moreContainer = document.createElement('div');
   moreContainer.className = 'restaurant-more-container';
-  container2.append(moreContainer);
+  buttonsContainer.append(moreContainer);
   const more = document.createElement('a');
   more.className = 'restaurant-more';
   more.innerHTML = 'View Details';
@@ -259,7 +266,61 @@ createRestaurantHTML = restaurant => {
   more.setAttribute('aria-label', `${restaurant.name} more details`);
   moreContainer.append(more);
 
+  const favButton = document.createElement('button');
+  favButton.className = 'restaurant-fav-button';
+  favButton.innerHTML = `<img alt='Make favorite' src='${UrlHelper.getUrl('img/gold-medal-32.png')}' />`;
+  favButton.title = 'Make favorite';
+  favButton.onclick = event => {
+    toggleFavoriteRestaurant(restaurant);
+  };
+  buttonsContainer.append(favButton);
+
+  const reviewButton = document.createElement('button');
+  reviewButton.className = 'restaurant-write-review-button';
+  reviewButton.innerHTML = `<img alt='Write a review' src='${UrlHelper.getUrl('img/write-32.png')}' />`;
+  reviewButton.title = 'Write a review';
+  reviewButton.onclick = event => {
+    reviewRestaurant(restaurant);
+  };
+  buttonsContainer.append(reviewButton);
+
   return li;
+};
+
+isFavoriteRestaurant = restaurant => {
+  if (!window.localStorage)
+    return false;
+  if (!restaurant)
+    return false;
+  var currentFavoriteRestaurant = window.localStorage.getItem('favoriteRestaurant');
+  return (currentFavoriteRestaurant && currentFavoriteRestaurant === restaurant.id.toString());
+};
+
+toggleFavoriteRestaurant = restaurant => {
+  if (!window.localStorage) {
+    alert('Local storage not supported!');
+    return;
+  }
+  let favoriteRestaurantId = -1;
+  if (isFavoriteRestaurant(restaurant)) {
+    window.localStorage.removeItem('favoriteRestaurant');
+    // alert(`No favorite restaurant for me!`);
+  } else {
+    window.localStorage.setItem('favoriteRestaurant', restaurant.id);
+    favoriteRestaurantId = restaurant.id;
+    // alert(`'${restaurant.name}' is my favorite restaurant!`);
+  }
+  favoriteRestaurantId = `restaurant-container-${favoriteRestaurantId}`;
+  const lis = document.querySelectorAll('#restaurants-list .restaurant-list-item-container');
+  lis.forEach(item => {
+    item.classList.remove('favorite');
+    if (item.id === favoriteRestaurantId)
+      item.classList.add('favorite');
+  });
+};
+
+reviewRestaurant = restaurant => {
+  alert(`Just write a review for '${restaurant.name}'`);
 };
 
 /**
