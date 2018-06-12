@@ -234,11 +234,21 @@ createRestaurantHTML = restaurant => {
   container2.className = 'container2';
   itemContainer.append(container2);
 
+  const container3 = document.createElement('div');
+  container3.className = 'container3';
+  container2.append(container3);
+
+  const favoriteImage = document.createElement('img');
+  favoriteImage.className = 'favorite-Image';
+  favoriteImage.alt = "Is favorite";
+  favoriteImage.src = UrlHelper.getUrl('img/gold-medal-32.png');
+  container3.append(favoriteImage);
+
   const name = document.createElement('h2');
   name.className = 'restaurant-name';
   name.innerHTML = restaurant.name;
   name.setAttribute('tabindex', '0');
-  container2.append(name);
+  container3.append(name);
 
   const neighborhood = document.createElement('p');
   neighborhood.className = 'restaurant-neighborhood';

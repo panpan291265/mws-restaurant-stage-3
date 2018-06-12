@@ -67,7 +67,14 @@ resumeMap = () => {
   DBHelper.mapMarkerForRestaurant(self.restaurant, self.map);
 };
 
-
+isFavoriteRestaurant = restaurant => {
+  if (!window.localStorage)
+    return false;
+  if (!restaurant)
+    return false;
+  var currentFavoriteRestaurant = window.localStorage.getItem('favoriteRestaurant');
+  return (currentFavoriteRestaurant && currentFavoriteRestaurant === restaurant.id.toString());
+};
 
 /**
  * Get current restaurant from page URL.
@@ -98,6 +105,17 @@ fetchRestaurantFromURL = (callback) => {
  * Create restaurant HTML and add it to the webpage
  */
 fillRestaurantHTML = (restaurant = self.restaurant) => {
+  if (isFavoriteRestaurant(restaurant)) {
+    const restaurantContainer = document.getElementById('restaurant-container');
+    restaurantContainer.classList.add('favorite');
+    const favoriteImages = restaurantContainer.querySelectorAll('#restaurant-name-container img.favorite-image');
+    if (favoriteImages && favoriteImages.length > 0) {
+      favoriteImages.forEach(img => {
+        img.src = UrlHelper.getUrl('img/gold-medal-32.png');
+      });
+    }
+  }
+
   const name = document.getElementById('restaurant-name');
   name.innerHTML = restaurant.name;
 
