@@ -58,7 +58,7 @@
 }
 
 #restaurant-name-container {
-  margin: 12px 0;
+  margin: 12px 0 4px 0;
   text-align: center;
   order: 0;
   width: 100%;
@@ -67,6 +67,28 @@
   flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
+}
+
+#restaurant-name-container h2 {
+  margin: 3px 0;
+}
+
+#restaurant-actions-container {
+  margin: 2px 0 12px 0;
+  text-align: center;
+  order: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+}
+
+#restaurant-actions-container button {
+  margin: 4px 16px;
+  width: 64px;
+  text-align: center;
 }
 
 #restaurant-name {

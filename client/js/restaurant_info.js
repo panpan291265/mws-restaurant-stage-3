@@ -76,6 +76,47 @@ isFavoriteRestaurant = restaurant => {
   return (currentFavoriteRestaurant && currentFavoriteRestaurant === restaurant.id.toString());
 };
 
+resumeFavoriteRestaurant = restaurant => {
+  const isFavorite = isFavoriteRestaurant(restaurant);
+  const restaurantContainer = document.getElementById('restaurant-container');
+  if (isFavorite)
+    restaurantContainer.classList.add('favorite');
+  else
+    restaurantContainer.classList.remove('favorite');
+  const favoriteImages = restaurantContainer.querySelectorAll('#restaurant-name-container img.favorite-image');
+  if (favoriteImages && favoriteImages.length > 0) {
+    favoriteImages.forEach(img => {
+      if (isFavorite) {
+        img.src = UrlHelper.getUrl('img/gold-medal-32.png');
+        img.style.display = 'inline-block';
+      }
+      else {
+        img.style.display = 'none';
+        img.src = "";
+      }
+    });
+  }
+};
+
+toggleFavoriteRestaurant = restaurant => {
+  if (!window.localStorage) {
+    alert('Local storage not supported!');
+    return;
+  }
+  if (isFavoriteRestaurant(restaurant)) {
+    window.localStorage.removeItem('favoriteRestaurant');
+    // alert(`No favorite restaurant for me!`);
+  } else {
+    window.localStorage.setItem('favoriteRestaurant', restaurant.id);
+    // alert(`'${restaurant.name}' is my favorite restaurant!`);
+  }
+  resumeFavoriteRestaurant(restaurant);
+};
+
+reviewRestaurant = restaurant => {
+  alert(`Just write a review for '${restaurant.name}'`);
+};
+
 /**
  * Get current restaurant from page URL.
  */
@@ -105,19 +146,30 @@ fetchRestaurantFromURL = (callback) => {
  * Create restaurant HTML and add it to the webpage
  */
 fillRestaurantHTML = (restaurant = self.restaurant) => {
-  if (isFavoriteRestaurant(restaurant)) {
-    const restaurantContainer = document.getElementById('restaurant-container');
-    restaurantContainer.classList.add('favorite');
-    const favoriteImages = restaurantContainer.querySelectorAll('#restaurant-name-container img.favorite-image');
-    if (favoriteImages && favoriteImages.length > 0) {
-      favoriteImages.forEach(img => {
-        img.src = UrlHelper.getUrl('img/gold-medal-32.png');
-      });
-    }
-  }
+  resumeFavoriteRestaurant(restaurant);
 
   const name = document.getElementById('restaurant-name');
   name.innerHTML = restaurant.name;
+
+  const favoriteButton = document.querySelector('#restaurant-actions-container button.restaurant-fav-button');
+  if (favoriteButton) {
+    favoriteButton.onclick = event => {
+      toggleFavoriteRestaurant(restaurant);
+    };
+    const favoriteImage = favoriteButton.querySelector('img');
+    if (favoriteImage)
+      favoriteImage.src = UrlHelper.getUrl('img/gold-medal-32.png');
+  }
+
+  const reviewButton = document.querySelector('#restaurant-actions-container button.restaurant-write-review-button');
+  if (reviewButton) {
+    reviewButton.onclick = event => {
+      reviewRestaurant(restaurant);
+    };
+    const reviewImage = reviewButton.querySelector('img');
+    if (reviewImage)
+      reviewImage.src = UrlHelper.getUrl('img/write-32.png');
+  }
 
   const address = document.getElementById('restaurant-address');
   address.setAttribute('tabIndex', '0');
