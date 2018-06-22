@@ -1,6 +1,7 @@
 /**
  * Register service worker
  */
+/*
 (function registerServiceWorker() {
   if (navigator.serviceWorker) {
     navigator.serviceWorker.register('serviceWorker.min.js')
@@ -12,6 +13,7 @@
       })
   }
 })();
+*/
 
 /**
  * Initialize focus on window load.
@@ -67,17 +69,8 @@ resumeMap = () => {
   DBHelper.mapMarkerForRestaurant(self.restaurant, self.map);
 };
 
-isFavoriteRestaurant = restaurant => {
-  if (!window.localStorage)
-    return false;
-  if (!restaurant)
-    return false;
-  var currentFavoriteRestaurant = window.localStorage.getItem('favoriteRestaurant');
-  return (currentFavoriteRestaurant && currentFavoriteRestaurant === restaurant.id.toString());
-};
-
 resumeFavoriteRestaurant = restaurant => {
-  const isFavorite = isFavoriteRestaurant(restaurant);
+  const isFavorite = DBHelper.isFavoriteRestaurant(restaurant);
   const restaurantContainer = document.getElementById('restaurant-container');
   if (isFavorite)
     restaurantContainer.classList.add('favorite');
@@ -99,43 +92,40 @@ resumeFavoriteRestaurant = restaurant => {
 };
 
 toggleFavoriteRestaurant = restaurant => {
-  if (!window.localStorage) {
-    alert('Local storage not supported!');
-    return;
-  }
-  if (isFavoriteRestaurant(restaurant)) {
-    window.localStorage.removeItem('favoriteRestaurant');
-    // alert(`No favorite restaurant for me!`);
-  } else {
-    window.localStorage.setItem('favoriteRestaurant', restaurant.id);
-    // alert(`'${restaurant.name}' is my favorite restaurant!`);
-  }
-  resumeFavoriteRestaurant(restaurant);
+  DBHelper.toggleFavoriteRestaurant(restaurant, (error, restaurant) => {
+    if (error)
+      return console.log(error);
+    resumeFavoriteRestaurant(restaurant);
+  });
 };
 
-reviewRestaurant = restaurant => {
-  alert(`Just write a review for '${restaurant.name}'`);
+reviewRestaurant = (restaurant, event) => {
+  // alert(`Just write a review for '${restaurant.name}'`);
+  event.preventDefault();
+  event.stopPropagation();
+  const url = DBHelper.urlForRestaurantReview(restaurant);
+  setTimeout(() => UrlHelper.goToUrl(url), 0);
 };
 
 /**
  * Get current restaurant from page URL.
  */
 fetchRestaurantFromURL = (callback) => {
-  if (self.restaurant) { // restaurant already fetched!
+  if (self.restaurant) {
     callback(null, self.restaurant)
     return;
   }
-  const id = getParameterByName('id');
+  const id = UrlHelper.getParameterByName('id');
   if (!id) { // no id found in URL
     error = 'No restaurant id in URL'
     callback(error, null);
   } else {
     DBHelper.fetchRestaurantById(id, (error, restaurant) => {
+      if (error)
+        return callback(error, null);
+      if (!restaurant)
+        return callback(`Restaurant with id '${id}' cound not be found!`, null);
       self.restaurant = restaurant;
-      if (!restaurant) {
-        console.error(error);
-        return;
-      }
       fillRestaurantHTML();
       callback(null, restaurant)
     });
@@ -164,7 +154,7 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   const reviewButton = document.querySelector('#restaurant-actions-container button.restaurant-write-review-button');
   if (reviewButton) {
     reviewButton.onclick = event => {
-      reviewRestaurant(restaurant);
+      reviewRestaurant(restaurant, event);
     };
     const reviewImage = reviewButton.querySelector('img');
     if (reviewImage)
@@ -300,20 +290,4 @@ fillBreadcrumb = (restaurant = self.restaurant) => {
   const li = document.createElement('li');
   li.innerHTML = restaurant.name;
   breadcrumbList.appendChild(li);
-}
-
-/**
- * Get a parameter by name from page URL.
- */
-getParameterByName = (name, url) => {
-  if (!url)
-    url = window.location.href;
-  name = name.replace(/[\[\]]/g, '\\$&');
-  const regex = new RegExp(`[?&]${name}(=([^&#]*)|&|#|$)`),
-    results = regex.exec(url);
-  if (!results)
-    return null;
-  if (!results[2])
-    return '';
-  return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }

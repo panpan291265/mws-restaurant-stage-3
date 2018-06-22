@@ -2,6 +2,16 @@
  * Register service worker
  */
 (function registerServiceWorker() {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (connection) {
+    connection.addEventListener('change', () => {
+      // console.log('connection:', connection);
+      if (connection.effectiveType && connection.downlink > 0) {
+        DBHelper.registerDataSync();
+      }
+    });
+  }
+
   if (navigator.serviceWorker) {
     navigator.serviceWorker
       .register('serviceWorker.min.js')
@@ -11,6 +21,20 @@
       .catch(err => {
         console.error('Error registering service worker:', err);
       });
+    navigator.serviceWorker.addEventListener('message', event => {
+      if (event.data && event.data.id === 'synchronize-data') {
+        DBHelper.synchronizeData()
+          .then(refresh => {
+            if (refresh) {
+              fetchData();
+            }
+          })
+          .catch(err => {
+            console.error('Error synchronizing data:', err);
+          });
+      }
+    });
+    DBHelper.registerDataSync();
   }
 })();
 
@@ -204,7 +228,7 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
 createRestaurantHTML = restaurant => {
   const li = document.createElement('li');
 
-  const isFavorite = isFavoriteRestaurant(restaurant);
+  const isFavorite = DBHelper.isFavoriteRestaurant(restaurant);
 
   const itemContainer = document.createElement('div');
   itemContainer.id = `restaurant-container-${restaurant.id}`;
@@ -240,7 +264,7 @@ createRestaurantHTML = restaurant => {
 
   const favoriteImage = document.createElement('img');
   favoriteImage.className = 'favorite-Image';
-  favoriteImage.alt = "Is favorite";
+  favoriteImage.alt = 'Is favorite';
   favoriteImage.src = UrlHelper.getUrl('img/gold-medal-32.png');
   container3.append(favoriteImage);
 
@@ -297,40 +321,19 @@ createRestaurantHTML = restaurant => {
   return li;
 };
 
-isFavoriteRestaurant = restaurant => {
-  if (!window.localStorage)
-    return false;
-  if (!restaurant)
-    return false;
-  var currentFavoriteRestaurant = window.localStorage.getItem('favoriteRestaurant');
-  return (currentFavoriteRestaurant && currentFavoriteRestaurant === restaurant.id.toString());
-};
-
 toggleFavoriteRestaurant = restaurant => {
-  if (!window.localStorage) {
-    alert('Local storage not supported!');
-    return;
-  }
-  let favoriteRestaurantId = -1;
-  if (isFavoriteRestaurant(restaurant)) {
-    window.localStorage.removeItem('favoriteRestaurant');
-    // alert(`No favorite restaurant for me!`);
-  } else {
-    window.localStorage.setItem('favoriteRestaurant', restaurant.id);
-    favoriteRestaurantId = restaurant.id;
-    // alert(`'${restaurant.name}' is my favorite restaurant!`);
-  }
-  favoriteRestaurantId = `restaurant-container-${favoriteRestaurantId}`;
-  const lis = document.querySelectorAll('#restaurants-list .restaurant-list-item-container');
-  lis.forEach(item => {
-    item.classList.remove('favorite');
-    if (item.id === favoriteRestaurantId)
-      item.classList.add('favorite');
+  DBHelper.toggleFavoriteRestaurant(restaurant, (error, restaurant) => {
+    if (error) return console.log(error);
+    const li = document.querySelector(`#restaurants-list #restaurant-container-${restaurant.id}`);
+    const isFavorite = DBHelper.isFavoriteRestaurant(restaurant);
+    if (isFavorite) li.classList.add('favorite');
+    else li.classList.remove('favorite');
   });
 };
 
 reviewRestaurant = restaurant => {
-  alert(`Just write a review for '${restaurant.name}'`);
+  const url = DBHelper.urlForRestaurantReview(restaurant);
+  UrlHelper.goToUrl(url);
 };
 
 /**

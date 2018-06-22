@@ -4,9 +4,9 @@
 
 const dbVersion = 1;
 let dbPromise = null;
+let syncCounter = 0;
 
 class DBHelper {
-  
   /**
    * API Data Services URL.
    */
@@ -159,8 +159,7 @@ class DBHelper {
           if (restaurant) {
             DBHelper.fetchRestaurantReviews(restaurant.id, (error, restaurantReviews) => {
               restaurant.reviews = restaurantReviews;
-              if (callback)
-                callback(null, restaurant);
+              if (callback) callback(null, restaurant);
             });
           } else {
             callback(`Restaurant with id '${id}' could not be found.`, null);
@@ -173,7 +172,7 @@ class DBHelper {
     });
   }
 
-   /**
+  /**
    * Fetch a restaurant by its ID.
    */
   static fetchRestaurantReviews(restaurantId, callback) {
@@ -191,7 +190,7 @@ class DBHelper {
         .getAll()
         .then(reviews => {
           if (reviews && reviews.length > 0) {
-            reviews = reviews.filter(r => r.restaurant_id === restaurantId)
+            reviews = reviews.filter(r => r.restaurant_id === restaurantId);
           }
           if (callback) {
             callback(null, reviews);
@@ -203,7 +202,6 @@ class DBHelper {
         });
     });
   }
-
 
   /**
    * Fetch restaurants by a cuisine type with proper error handling.
@@ -313,6 +311,13 @@ class DBHelper {
   }
 
   /**
+   * Restaurant review page URL.
+   */
+  static urlForRestaurantReview(restaurant) {
+    return `${UrlHelper.ROOT_URL}restaurant_review.html?id=${restaurant.id}`;
+  }
+
+  /**
    * Restaurant image URL.
    */
   static imageUrlForRestaurant(restaurant, suffix = null) {
@@ -336,6 +341,52 @@ class DBHelper {
     });
     return marker;
   }
+
+  static isFavoriteRestaurant(restaurant) {
+    if (!restaurant) return false;
+    return !!restaurant.is_favorite;
+  }
+
+  static toggleFavoriteRestaurant(restaurant, callback) {
+    const isFavorite = !!DBHelper.isFavoriteRestaurant(restaurant);
+    restaurant.is_favorite = !isFavorite;
+    dbPromise.then(db => {
+      const tx = db.transaction('restaurants', 'readwrite');
+      const store = tx.objectStore('restaurants');
+      store.put(restaurant);
+      const urlFav = `${DBHelper.DATASERVICE_RESTAURANTS_URL}/${restaurant.id}?is_favorite=${restaurant.is_favorite}`;
+      fetch(urlFav, { method: 'POST' })
+        .catch(err => {
+          console.log(err);
+        });
+      if (callback) callback(null, restaurant);
+      DBHelper.registerDataSync();
+      return tx.complete;
+    });
+  }
+
+  static registerDataSync() {
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker.ready
+        .then(registration => {
+          return registration.sync.register(`sync-${++syncCounter}`);
+        })
+        .catch(err => {
+          console.error('Error registering service worker:', err);
+        });
+    }
+  }
+
+  static synchronizeData() {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (!connection || !connection.effectiveType || connection.downlink <= 0) {
+      console.log(`Network inactive, can not synchronizing data, exiting.`);
+      return Promise.resolve(false);
+    }
+    console.log(`Network active, synchronizing data!`);
+    return Promise.resolve(true);
+  }
+ 
 }
 
 dbPromise = DBHelper.openDB();
