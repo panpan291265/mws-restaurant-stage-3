@@ -58,12 +58,10 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // console.log('Service worker fetch event handler called :', event);
-
+  let cacheKey = event.request.url;
+  if (cacheKey.startsWith(apiServer)) return fetch(event.request);
   const responsePromise = new Promise((resolve, reject) => {
     caches.open(cacheName).then(cache => {
-      let cacheKey = event.request.url;
-      if (cacheKey.startsWith(apiServer)) return fetch(event.request);
       cache.match(cacheKey).then(cachedResponse => {
         if (cachedResponse) return resolve(cachedResponse);
         fetch(event.request)
@@ -93,7 +91,7 @@ self.addEventListener('fetch', event => {
 self.addEventListener('sync', event => {
   if (event.tag.startsWith('sync-')) {
     self.clients.matchAll().then(clients => {
-      clients.forEach(client => client.postMessage({ id: 'synchronize-data', tag: event.tag}));
+      clients.forEach(client => client.postMessage({ id: 'synchronize-data', tag: event.tag }));
     });
   }
 });

@@ -21,7 +21,7 @@
           "Sunday": "12:00 pm - 4:00 pm, 5:30 pm - 11:00 pm"
         },
         "createdAt": 1504095563444,
-        "updatedAt": "2018-06-22T11:25:55.370Z",
+        "updatedAt": "2018-06-23T08:21:00.856Z",
         "id": 1,
         "is_favorite": "false"
       },
@@ -45,7 +45,7 @@
           "Sunday": "12:00 pm - 3:00 pm, 5:00 pm - 11:00 pm"
         },
         "createdAt": 1504095568414,
-        "updatedAt": "2018-06-22T05:19:27.888Z",
+        "updatedAt": "2018-06-23T08:03:30.873Z",
         "is_favorite": "false",
         "id": 2
       },
@@ -69,7 +69,7 @@
           "Sunday": "11:30 am - 2:00 am"
         },
         "createdAt": 1504095571434,
-        "updatedAt": "2018-06-20T05:14:57.248Z",
+        "updatedAt": "2018-06-23T08:12:55.341Z",
         "id": 3,
         "is_favorite": "true"
       },
@@ -93,8 +93,8 @@
           "Sunday": "Sat - 10:30 pm"
         },
         "createdAt": 1504095567091,
-        "updatedAt": 1504095567091,
-        "is_favorite": false,
+        "updatedAt": "2018-06-23T08:22:47.478Z",
+        "is_favorite": "false",
         "id": 4
       },
       {
@@ -117,7 +117,7 @@
           "Sunday": "10:00 am - 12:00 am"
         },
         "createdAt": 1504095567071,
-        "updatedAt": "2018-06-22T05:19:36.583Z",
+        "updatedAt": "2018-06-23T08:03:36.711Z",
         "is_favorite": "false",
         "id": 5
       },
@@ -141,8 +141,8 @@
           "Sunday": "12:00 pm - 9:00 pm"
         },
         "createdAt": 1504095567071,
-        "updatedAt": 1504095567071,
-        "is_favorite": false,
+        "updatedAt": "2018-06-23T08:03:37.927Z",
+        "is_favorite": "false",
         "id": 6
       },
       {
@@ -213,7 +213,7 @@
           "Sunday": "5:00 pm - 10:00 pm"
         },
         "createdAt": 1504095567191,
-        "updatedAt": "2018-06-20T05:18:36.261Z",
+        "updatedAt": "2018-06-23T08:13:44.928Z",
         "is_favorite": "true",
         "id": 9
       },
@@ -236,8 +236,8 @@
           "Sunday": "11:00 am - 12:00 am"
         },
         "createdAt": 1504095567183,
-        "updatedAt": 1504095567183,
-        "is_favorite": false,
+        "updatedAt": "2018-06-23T08:04:20.843Z",
+        "is_favorite": "false",
         "id": 10
       }
     ],

@@ -344,21 +344,27 @@ class DBHelper {
 
   static isFavoriteRestaurant(restaurant) {
     if (!restaurant) return false;
-    return !!restaurant.is_favorite;
+    if (restaurant.is_favorite && restaurant.is_favorite.toString().toLowerCase() === 'true') {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   static toggleFavoriteRestaurant(restaurant, callback) {
-    const isFavorite = !!DBHelper.isFavoriteRestaurant(restaurant);
+    const isFavorite = DBHelper.isFavoriteRestaurant(restaurant);
     restaurant.is_favorite = !isFavorite;
+    restaurant.updatedAt = new Date().toISOString();
     dbPromise.then(db => {
       const tx = db.transaction('restaurants', 'readwrite');
       const store = tx.objectStore('restaurants');
       store.put(restaurant);
+      /*
       const urlFav = `${DBHelper.DATASERVICE_RESTAURANTS_URL}/${restaurant.id}?is_favorite=${restaurant.is_favorite}`;
-      fetch(urlFav, { method: 'POST' })
-        .catch(err => {
-          console.log(err);
-        });
+      fetch(urlFav, { method: 'PUT' }).catch(err => {
+        console.log(err);
+      });
+      */
       if (callback) callback(null, restaurant);
       DBHelper.registerDataSync();
       return tx.complete;
@@ -380,13 +386,153 @@ class DBHelper {
   static synchronizeData() {
     const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     if (!connection || !connection.effectiveType || connection.downlink <= 0) {
-      console.log(`Network inactive, can not synchronizing data, exiting.`);
+      // console.log(`Network inactive, can not synchronizing data, exiting.`);
       return Promise.resolve(false);
     }
-    console.log(`Network active, synchronizing data!`);
-    return Promise.resolve(true);
+    // console.log(`Network active, synchronizing data!`);
+    return DBHelper.synchronizeRestaurants()
+      .then(() => DBHelper.synchronizeRestaurantReviews())
+      .then(() => true)
+      .catch(err => {
+        console.log(err);
+        return false;
+      });
   }
- 
+
+  static synchronizeRestaurants() {
+    return fetch(DBHelper.DATASERVICE_RESTAURANTS_URL)
+      .then(response => response.json())
+      .then(restaurants => {
+        return dbPromise
+          .then(db => {
+            let tasks = [];
+            const tx = db.transaction('restaurants', 'readwrite');
+            return tx
+              .objectStore('restaurants')
+              .getAll()
+              .then(localRestaurants => {
+                localRestaurants.forEach(localRestaurant => {
+                  const restaurant = restaurants.find(x => x.id === localRestaurant.id);
+                  const restaurantUpdatedAtDT = new Date(restaurant.updatedAt);
+                  const localRestaurantUpdatedAtDT = new Date(localRestaurant.updatedAt);
+                  if (restaurantUpdatedAtDT > localRestaurantUpdatedAtDT) {
+                    console.log(`updating local restaurant ${localRestaurant.id} - ${localRestaurant.name}`);
+                    tx.objectStore('restaurants').put(restaurant);
+                  } else if (restaurantUpdatedAtDT < localRestaurantUpdatedAtDT) {
+                    console.log(`updating server restaurant ${restaurant.id} - ${restaurant.name}`);
+                    tasks.push(
+                      fetch(
+                        `${DBHelper.DATASERVICE_RESTAURANTS_URL}/${
+                          restaurant.id
+                        }?is_favorite=${!!localRestaurant.is_favorite}`,
+                        {
+                          method: 'PUT'
+                        }
+                      )
+                    );
+                  }
+                });
+                return tx.complete.then(() => {
+                  if (tasks && tasks.length > 0) {
+                    return Promise.all(tasks);
+                  } else {
+                    return Promise.resolve();
+                  }
+                });
+              });
+          })
+          .catch(err => {
+            console.log(err);
+            return Promise.reject(err);
+          });
+      })
+      .catch(err => {
+        console.log(err);
+        return Promise.reject(err);
+      });
+  }
+
+  static synchronizeRestaurantReviews() {
+    return fetch(DBHelper.DATASERVICE_REVIEWS_URL)
+      .then(response => response.json())
+      .then(reviews => {
+        return dbPromise
+          .then(db => {
+            let tasks = [];
+            const tx = db.transaction('reviews', 'readwrite');
+            tx.objectStore('reviews')
+              .getAll()
+              .then(localReviews => {
+                localReviews.forEach(localReview => {
+                  const review = reviews.find(x => x.id === localReview.id);
+                  if (!review) {
+                    if (localReview.createdAt && !localReview.updatedAt) {
+                      tasks.push(
+                        fetch(DBHelper.DATASERVICE_REVIEWS_URL, {
+                          method: 'POST',
+                          headers: {
+                            'content-type': 'application/json'
+                          },
+                          body: {
+                            restaurant_id: localReview.restaurant_id,
+                            name: localReview.name,
+                            rating: localReview.rating,
+                            comments: localReview.comments
+                          }
+                        })
+                      );
+                    } else {
+                      tx.objectStore('reviews').delete(localReview);
+                    }
+                  } else {
+                    if (review.updatedAt > localReview.updatedAt) {
+                      tx.objectStore('reviews').put(review);
+                    } else if (review.updatedAt < localReview.updatedAt) {
+                      tasks.push(
+                        fetch(`${DBHelper.DATASERVICE_REVIEWS_URL}/${review.id}`, {
+                          method: 'PUT',
+                          headers: {
+                            'content-type': 'application/json'
+                          },
+                          body: {
+                            name: localReview.name,
+                            rating: localReview.rating,
+                            comments: localReview.comments
+                          }
+                        })
+                      );
+                    }
+                  }
+                });
+                reviews.forEach(review => {
+                  const localReview = localReviews.find(x => x.id === review.id);
+                  if (!localReview) {
+                    tasks.push(
+                      fetch(`${DBHelper.DATASERVICE_REVIEWS_URL}/${review.id}`, {
+                        method: 'DELETE'
+                      })
+                    );
+                  }
+                });
+                return tx.complete.then(() => {
+                  if (tasks && tasks.length > 0) {
+                    return Promise.all(tasks);
+                  } else {
+                    return Promise.resolve();
+                  }
+                });
+              });
+          })
+          .catch(err => {
+            console.log(err);
+            return Promise.reject(err);
+          });
+      })
+      .catch(err => {
+        console.log(err);
+        return Promise.reject(err);
+      });
+  }
 }
 
 dbPromise = DBHelper.openDB();

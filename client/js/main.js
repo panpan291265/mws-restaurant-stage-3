@@ -14,7 +14,8 @@
 
   if (navigator.serviceWorker) {
     navigator.serviceWorker
-      .register('serviceWorker.min.js')
+      // .register('serviceWorker.min.js')
+      .register('serviceWorker.js')
       .then(() => {
         // console.log('Service worker registered successfully.');
       })
@@ -26,7 +27,7 @@
         DBHelper.synchronizeData()
           .then(refresh => {
             if (refresh) {
-              fetchData();
+              updateRestaurants();
             }
           })
           .catch(err => {
