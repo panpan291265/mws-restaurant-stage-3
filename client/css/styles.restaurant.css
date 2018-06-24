@@ -255,11 +255,21 @@
   text-transform: uppercase;
 }
 
+.review-actions {
+  width: 100%;
+  text-align: left;
+  padding: 0;
+}
+
 .review-date {
   width: 100%;
   text-align: left;
   padding: 0;
   font-size: 1.0rem;
+}
+
+.review-actions button {
+  margin: 0 8px;
 }
 
 .review-rating-container {
@@ -294,12 +304,19 @@
   #restaurant-hours td {
     padding-left: 12px;
   }
+}
+
+@media (min-width: 500px) {
   .review-author {
-    width: 50%;
+    width: 33.3%;
     text-align: left;
   }
+  .review-actions {
+    width: 33.3%;
+    text-align: center;
+  }
   .review-date {
-    width: 50%;
+    width: 33.3%;
     text-align: right;
   }
 }

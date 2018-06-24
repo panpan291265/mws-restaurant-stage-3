@@ -162,18 +162,48 @@ class DBHelper {
               if (callback) callback(null, restaurant);
             });
           } else {
-            callback(`Restaurant with id '${id}' could not be found.`, null);
+            callback(`Restaurant with id '${id}' could not be found.`);
           }
         })
         .catch(err => {
-          if (callback) callback(err, null);
+          if (callback) callback(err);
           else console.log(err);
         });
     });
   }
 
   /**
-   * Fetch a restaurant by its ID.
+   * Fetch a review by its ID.
+   */
+  static fetchReviewById(id, callback) {
+    dbPromise.then(db => {
+      if (id) {
+        try {
+          id = parseInt(id);
+        } catch (ex) {
+          console.log(ex);
+          id = null;
+        }
+      }
+      db.transaction('reviews')
+        .objectStore('reviews')
+        .get(id)
+        .then(review => {
+          if (review) {
+            if (callback) callback(null, review);
+          } else {
+            callback(`Review with id '${id}' could not be found.`);
+          }
+        })
+        .catch(err => {
+          if (callback) callback(err);
+          else console.log(err);
+        });
+    });
+  }
+
+  /**
+   * Fetch restaurant reviews by restaurant Id.
    */
   static fetchRestaurantReviews(restaurantId, callback) {
     dbPromise.then(db => {
@@ -313,8 +343,11 @@ class DBHelper {
   /**
    * Restaurant review page URL.
    */
-  static urlForRestaurantReview(restaurant) {
-    return `${UrlHelper.ROOT_URL}restaurant_review.html?id=${restaurant.id}`;
+  static urlForRestaurantReview(restaurant, review) {
+    let url = `${UrlHelper.ROOT_URL}restaurant_review.html?restaurant_id=${restaurant.id}`;
+    if (review)
+      url += `&review_id=${review.id}`;
+    return url;
   }
 
   /**

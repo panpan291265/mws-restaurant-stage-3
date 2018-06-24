@@ -21,7 +21,7 @@
           "Sunday": "12:00 pm - 4:00 pm, 5:30 pm - 11:00 pm"
         },
         "createdAt": 1504095563444,
-        "updatedAt": "2018-06-23T08:21:00.856Z",
+        "updatedAt": "2018-06-24T07:44:06.404Z",
         "id": 1,
         "is_favorite": "false"
       },
@@ -93,8 +93,8 @@
           "Sunday": "Sat - 10:30 pm"
         },
         "createdAt": 1504095567091,
-        "updatedAt": "2018-06-23T08:22:47.478Z",
-        "is_favorite": "false",
+        "updatedAt": "2018-06-24T07:36:58.320Z",
+        "is_favorite": "true",
         "id": 4
       },
       {

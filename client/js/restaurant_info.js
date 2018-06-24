@@ -256,6 +256,24 @@ createReviewHTML = (review) => {
   name.classList.add('review-author');
   reviewHeader.appendChild(name);
 
+  const actions = document.createElement('div');
+  actions.classList.add('review-actions');
+  const buttonEdit = document.createElement('button');
+  buttonEdit.id = `review-edit-${review.id}`;
+  buttonEdit.innerHTML = `<img alt='Edit review' src='${UrlHelper.getUrl('img/write-32.png')}' />`;
+  buttonEdit.onclick = event => {
+    editReview(review);
+  };
+  actions.appendChild(buttonEdit);
+  const buttonDelete = document.createElement('button');
+  buttonDelete.id = `review-delete-${review.id}`;
+  buttonDelete.innerHTML = `<img alt='Delete review' src='${UrlHelper.getUrl('img/delete-32.png')}' />`;
+  buttonDelete.onclick = event => {
+    deleteReview(review);
+  };
+  actions.appendChild(buttonDelete);
+  reviewHeader.appendChild(actions);
+
   const date = document.createElement('div');
   date.innerHTML = new Date(review.updatedAt).toLocaleString();
   date.classList.add('review-date');
@@ -281,6 +299,19 @@ createReviewHTML = (review) => {
 
   return li;
 }
+
+editReview = review => {
+  const url = DBHelper.urlForRestaurantReview(self.restaurant, review);
+  UrlHelper.goToUrl(url);
+};
+
+deleteReview = review => {
+  const confirmDelete = confirm(`Do you really want to delete '${self.restaurant.name}' review no '${review.id}'?`);
+  if (confirmDelete) {
+    const url = DBHelper.urlForRestaurantReview(self.restaurant, review);
+    alert(`Delete review '${review.id}' for restaurant '${self.restaurant.name}'\n${url}`);
+  }
+};
 
 /**
  * Add restaurant name to the breadcrumb navigation menu

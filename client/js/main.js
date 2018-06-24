@@ -14,8 +14,7 @@
 
   if (navigator.serviceWorker) {
     navigator.serviceWorker
-      // .register('serviceWorker.min.js')
-      .register('serviceWorker.js')
+      .register('serviceWorker.min.js')
       .then(() => {
         // console.log('Service worker registered successfully.');
       })

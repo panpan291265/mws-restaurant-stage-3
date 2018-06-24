@@ -3,33 +3,47 @@ window.addEventListener('load', event => {
 });
 
 function initalizeRestaurantReviewPage() {
-  fetchRestaurantFromURL((error, restaurant) => {
+  fetchDataFromURL((error, restaurant, review) => {
     if (error) {
       console.error(error);
     } else {
         const restaurantTitle = document.getElementById('restaurant-title');
-        restaurantTitle.innerText = `Will you please write a review for '${restaurant.name}'?`;
+        if (review)
+          restaurantTitle.innerText = `Do you really want to edit review no '${review.id}' for '${restaurant.name}'?`;
+        else
+          restaurantTitle.innerText = `Will you please write a new review for '${restaurant.name}'?`;
     }
   });
 }
 
-fetchRestaurantFromURL = callback => {
+fetchDataFromURL = callback => {
   if (self.restaurant) {
     callback(null, self.restaurant);
     return;
   }
-  const id = UrlHelper.getParameterByName('id');
-  if (!id) {
+  const restaurantId = UrlHelper.getParameterByName('restaurant_id');
+  if (!restaurantId) {
     error = 'No restaurant id in URL';
     callback(error, null);
   } else {
-    DBHelper.fetchRestaurantById(id, (error, restaurant) => {
+    DBHelper.fetchRestaurantById(restaurantId, (error, restaurant) => {
       if (error)
-        return callback(error, null);
+        return callback(error);
       if (!restaurant)
-        return callback(`Restaurant with id '${id}' cound not be found!`, null);
+        return callback(`Restaurant with id '${restaurantId}' cound not be found!`);
       self.restaurant = restaurant;
-      callback(null, restaurant);
+      self.review = null;
+      const reviewId = UrlHelper.getParameterByName('review_id');
+      if (!reviewId)
+        return callback(null, restaurant);
+      DBHelper.fetchReviewById(reviewId, (error, review) => {
+        if (error)
+          return callback(error, restaurant);
+        if (!review)
+          return callback(`Review with id '${reviewId}' cound not be found!`, restaurant);
+        self.review = review;
+        return callback(null, restaurant, review);
+      });
     });
   }
 };

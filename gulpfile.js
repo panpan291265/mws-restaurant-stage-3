@@ -59,7 +59,8 @@ gulp.task('copy:images:restaurant', function () {
 gulp.task('copy:images:buttons', function () {
     return gulp.src([
             `${pathSourceImages}/gold-medal.png`,
-            `${pathSourceImages}/write.png`
+            `${pathSourceImages}/write.png`,
+            `${pathSourceImages}/delete.png`
         ])
         .pipe(responsive({
             '*.png': [
