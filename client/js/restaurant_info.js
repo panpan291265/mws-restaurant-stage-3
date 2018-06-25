@@ -100,7 +100,6 @@ toggleFavoriteRestaurant = restaurant => {
 };
 
 reviewRestaurant = (restaurant, event) => {
-  // alert(`Just write a review for '${restaurant.name}'`);
   event.preventDefault();
   event.stopPropagation();
   const url = DBHelper.urlForRestaurantReview(restaurant);
@@ -235,6 +234,7 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
     return;
   }
   const ul = document.getElementById('reviews-list');
+  ul.innerHTML = '';
   reviews.forEach(review => {
     ul.appendChild(createReviewHTML(review));
   });
@@ -260,6 +260,7 @@ createReviewHTML = (review) => {
   actions.classList.add('review-actions');
   const buttonEdit = document.createElement('button');
   buttonEdit.id = `review-edit-${review.id}`;
+  buttonEdit.title = 'Edit review';
   buttonEdit.innerHTML = `<img alt='Edit review' src='${UrlHelper.getUrl('img/write-32.png')}' />`;
   buttonEdit.onclick = event => {
     editReview(review);
@@ -267,6 +268,7 @@ createReviewHTML = (review) => {
   actions.appendChild(buttonEdit);
   const buttonDelete = document.createElement('button');
   buttonDelete.id = `review-delete-${review.id}`;
+  buttonDelete.title = 'Delete review';
   buttonDelete.innerHTML = `<img alt='Delete review' src='${UrlHelper.getUrl('img/delete-32.png')}' />`;
   buttonDelete.onclick = event => {
     deleteReview(review);
@@ -308,8 +310,18 @@ editReview = review => {
 deleteReview = review => {
   const confirmDelete = confirm(`Do you really want to delete '${self.restaurant.name}' review no '${review.id}'?`);
   if (confirmDelete) {
-    const url = DBHelper.urlForRestaurantReview(self.restaurant, review);
-    alert(`Delete review '${review.id}' for restaurant '${self.restaurant.name}'\n${url}`);
+    DBHelper.deleteReview(review).then(() => {
+      alert(`Review for restaurant '${self.restaurant.name}' has been deleted successfully!`);
+      if (self.restaurant && self.restaurant.reviews) {
+        const pos = self.restaurant.reviews.findIndex(x => x.id === review.id);
+        if (pos >= 0)
+          self.restaurant.reviews.splice(pos, 1);
+      }
+      fillReviewsHTML();
+    })
+    .catch(err => {
+      console.log(err);
+    });
   }
 };
 
@@ -318,7 +330,9 @@ deleteReview = review => {
  */
 fillBreadcrumb = (restaurant = self.restaurant) => {
   const breadcrumbList= document.querySelector('#breadcrumb ol');
-  const li = document.createElement('li');
-  li.innerHTML = restaurant.name;
-  breadcrumbList.appendChild(li);
+  if (breadcrumbList) {
+    const li = document.createElement('li');
+    li.innerHTML = restaurant.name;
+    breadcrumbList.appendChild(li);
+  }
 }

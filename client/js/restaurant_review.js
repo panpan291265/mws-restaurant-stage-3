@@ -6,21 +6,42 @@ function initalizeRestaurantReviewPage() {
   fetchDataFromURL((error, restaurant, review) => {
     if (error) {
       console.error(error);
+      return alert(error);
+    } else if (!restaurant) {
+      error = 'initalizeRestaurantReviewPage: invalid restaurant object!';
+      console.error(error);
+      return alert(error);
     } else {
+        let isNewReview = false;
         const restaurantTitle = document.getElementById('restaurant-title');
-        if (review)
-          restaurantTitle.innerText = `Do you really want to edit review no '${review.id}' for '${restaurant.name}'?`;
-        else
-          restaurantTitle.innerText = `Will you please write a new review for '${restaurant.name}'?`;
+        if (review) {
+          restaurantTitle.innerText = `Εdit review for '${restaurant.name}'`;
+        } else {
+          isNewReview = true;
+          review = DBHelper.getNewReview(restaurant);
+          restaurantTitle.innerText = `Add a new review for '${restaurant.name}'`;
+        }
+        const inputName = document.querySelector('.review-fields-container #name');
+        inputName.value = review.name;
+        const inputRating = document.querySelector('.review-fields-container #rating');
+        inputRating.value = review.rating;
+        const inputComments = document.querySelector('.review-fields-container #comments');
+        inputComments.value = review.comments;
+        const reviewForm = document.querySelector('#review-form');
+        reviewForm.onsubmit = event => {
+          submitReview(event, restaurant, review);
+        }
+        setTimeout(() => {
+          if (isNewReview)
+            inputName.focus();
+          else
+            inputComments.focus();
+        }, 0);
     }
   });
 }
 
 fetchDataFromURL = callback => {
-  if (self.restaurant) {
-    callback(null, self.restaurant);
-    return;
-  }
   const restaurantId = UrlHelper.getParameterByName('restaurant_id');
   if (!restaurantId) {
     error = 'No restaurant id in URL';
@@ -31,8 +52,6 @@ fetchDataFromURL = callback => {
         return callback(error);
       if (!restaurant)
         return callback(`Restaurant with id '${restaurantId}' cound not be found!`);
-      self.restaurant = restaurant;
-      self.review = null;
       const reviewId = UrlHelper.getParameterByName('review_id');
       if (!reviewId)
         return callback(null, restaurant);
@@ -41,9 +60,26 @@ fetchDataFromURL = callback => {
           return callback(error, restaurant);
         if (!review)
           return callback(`Review with id '${reviewId}' cound not be found!`, restaurant);
-        self.review = review;
         return callback(null, restaurant, review);
       });
     });
   }
+};
+
+submitReview = (event, restaurant, review) => {
+  event.preventDefault();
+  event.stopPropagation();
+  const inputName = document.querySelector('.review-fields-container #name');
+  const inputRating = document.querySelector('.review-fields-container #rating');
+  const inputComments = document.querySelector('.review-fields-container #comments');
+  review.name = inputName.value;
+  review.rating = parseInt(inputRating.value);
+  review.comments = inputComments.value;
+  DBHelper.saveReview(review).then(() => {
+    const restaurantUrl = DBHelper.urlForRestaurant(restaurant);
+    UrlHelper.goToUrl(restaurantUrl);
+  })
+  .catch(err => {
+    alert(err);
+  });
 };

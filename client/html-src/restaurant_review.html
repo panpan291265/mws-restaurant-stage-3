@@ -41,20 +41,39 @@
   <header>
     <nav>
       <h1>
-        <a href="#" onclick="history.back();" aria-label="Back">Back</a>
+        <a href="#" onclick="UrlHelper.goToUrl('/')" aria-label="Link to home page">Restaurant Reviews</a>
       </h1>
     </nav>
   </header>
 
   <main id="maincontent">
     <section id="restaurant-review-container">
-      <br><br>
-      <h2 id="restaurant-title">Write a review for the restaurant!</h2>
-      <br/>
-      <a href="#" onclick="history.back();" aria-label="Back">
-        <h3>Back</h3>
-      </a>
-      <br/><br/>
+      <div id="restaurant-title">Write a review for the restaurant!</div>
+      <form id="review-form">
+        <div class="review-fields-container">
+          <div class="review-field">
+            <label>Name</label>
+            <input id="name" name="name" type="text" required />
+          </div>
+          <div class="review-field">
+            <label>Rating</label>
+            <input id="rating" name="rating" type="number" required min="0" max="5" />
+          </div>
+          <div class="review-field">
+            <label>Comments</label>
+            <textarea id="comments" name="comments" type="text" rows="5" required>
+            </textarea>
+          </div>
+        </div>
+        <div class="review-buttons-container">
+          <button id="button-submit" type=submit>
+            <span>Submit</span>
+          </button>
+          <button id="button-cancel" type="button" onclick="history.back();">
+              <span>Cancel</span>
+            </button>
+        </div>
+      </form>
     </section>
   </main>
 

@@ -221,6 +221,22 @@ class DBHelper {
         .then(reviews => {
           if (reviews && reviews.length > 0) {
             reviews = reviews.filter(r => r.restaurant_id === restaurantId);
+            // sort reviews by updatedAt, createdAt descending
+            reviews.sort((a, b) => {
+              if (a.updatedAt < b.updatedAt) {
+                return 1;
+              } else if (a.updatedAt > b.updatedAt) {
+                return -1;
+              } else {
+                if (a.createdAt < b.createdAt) {
+                  return 1;
+                } else if (a.createdAt > b.createdAt) {
+                  return -1;
+                } else {
+                  return 0;
+                }
+              }
+            });
           }
           if (callback) {
             callback(null, reviews);
@@ -499,7 +515,7 @@ class DBHelper {
                 localReviews.forEach(localReview => {
                   const review = reviews.find(x => x.id === localReview.id);
                   if (!review) {
-                    if (localReview.createdAt && !localReview.updatedAt) {
+                    if (DBHelper.isLocalReview(localReview)) {
                       tasks.push(
                         fetch(DBHelper.DATASERVICE_REVIEWS_URL, {
                           method: 'POST',
@@ -515,7 +531,7 @@ class DBHelper {
                         })
                       );
                     } else {
-                      tx.objectStore('reviews').delete(localReview);
+                      tx.objectStore('reviews').delete(localReview.id);
                     }
                   } else {
                     if (review.updatedAt > localReview.updatedAt) {
@@ -548,11 +564,25 @@ class DBHelper {
                   }
                 });
                 return tx.complete.then(() => {
+                  let serverTasksPromise = null;
                   if (tasks && tasks.length > 0) {
-                    return Promise.all(tasks);
+                    serverTasksPromise = Promise.all(tasks);
                   } else {
-                    return Promise.resolve();
+                    serverTasksPromise = Promise.resolve();
                   }
+                  return serverTasksPromise.then(() => {
+                    const tx2 = db.transaction('reviews', 'readwrite');
+                    tx2.objectStore('reviews')
+                      .getAll()
+                      .then(localReviews => {
+                        localReviews.forEach(localReview => {
+                          if (DBHelper.isLocalReview(localReview)) {
+                            tx2.objectStore('reviews').delete(localReview.id);
+                          }
+                        });
+                      });
+                    return tx2.complete;
+                  });
                 });
               });
           })
@@ -566,6 +596,69 @@ class DBHelper {
         return Promise.reject(err);
       });
   }
+
+  static isLocalReview(review) {
+    if (!review)
+      throw new Error('isLocalReview: invalid review object!');
+    if (!review.id || review.id < 0)
+      return true;
+    else
+      return false;      
+  }
+
+  static getNewReview(restaurant = null) {
+    let lastLocalReviewId = localStorage.getItem('lastLocalReviewId');
+    if (lastLocalReviewId === undefined || lastLocalReviewId === null)
+      lastLocalReviewId = 0;
+    else
+      lastLocalReviewId = parseInt(lastLocalReviewId);
+    const review = {
+      id: --lastLocalReviewId,
+      restaurant_id: restaurant ? restaurant.id : null,
+      name: null,
+      rating: 0,
+      comments: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    localStorage.setItem('lastLocalReviewId', lastLocalReviewId);
+    return review;
+  }
+
+  static saveReview(review) {
+    if (!review)
+      return Promise.reject('saveReview: invalid review object!');
+    if (!review.restaurant_id)
+      return Promise.reject('saveReview: restaurant id field is required!');
+    if (!review.name)
+      return Promise.reject('saveReview: review name field is required!');
+    if (review.rating === undefined || review.rating === null)
+      return Promise.reject('saveReview: review rating field is required!');
+    if (review.rating < 0 || review.rating > 5)
+      return Promise.reject('saveReview: review rating field must have a value between 0 and 5!');
+    if (!review.comments)
+      return Promise.reject('saveReview: review comments field is required!');
+    return dbPromise
+      .then(db => {
+        const tx = db.transaction('reviews', 'readwrite');
+        tx.objectStore('reviews').put(review);
+        // DBHelper.registerDataSync();
+        return tx.complete;
+      });
+  }
+
+  static deleteReview(review) {
+    if (!review)
+      return Promise.reject('saveReview: invalid review object!');
+    return dbPromise
+      .then(db => {
+        const tx = db.transaction('reviews', 'readwrite');
+        tx.objectStore('reviews').delete(review.id);
+        // DBHelper.registerDataSync();
+        return tx.complete;
+      });
+  }
+
 }
 
 dbPromise = DBHelper.openDB();
