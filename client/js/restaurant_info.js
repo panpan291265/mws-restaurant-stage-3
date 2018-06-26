@@ -127,7 +127,7 @@ reviewRestaurant = (restaurant, event) => {
   event.preventDefault();
   event.stopPropagation();
   const url = DBHelper.urlForRestaurantReview(restaurant);
-  setTimeout(() => UrlHelper.goToUrl(url), 0);
+  UrlHelper.goToUrl(url);
 };
 
 /**

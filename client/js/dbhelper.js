@@ -339,14 +339,16 @@ class DBHelper {
    * Restaurant page URL.
    */
   static urlForRestaurant(restaurant) {
-    return `${UrlHelper.ROOT_URL}restaurant.html?id=${restaurant.id}`;
+    // return `${UrlHelper.ROOT_URL}restaurant.html?id=${restaurant.id}`;
+    return `restaurant.html?id=${restaurant.id}`;
   }
 
   /**
    * Restaurant review page URL.
    */
   static urlForRestaurantReview(restaurant, review) {
-    let url = `${UrlHelper.ROOT_URL}restaurant_review.html?restaurant_id=${restaurant.id}`;
+    // let url = `${UrlHelper.ROOT_URL}restaurant_review.html?restaurant_id=${restaurant.id}`;
+    let url = `restaurant_review.html?restaurant_id=${restaurant.id}`;
     if (review) url += `&review_id=${review.id}`;
     return url;
   }
