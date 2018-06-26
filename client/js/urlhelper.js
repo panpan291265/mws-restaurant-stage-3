@@ -2,7 +2,7 @@ class UrlHelper {
 
     static get ROOT_URL() {
         let rootUrl = window.location.pathname;
-        const slashPos = rootUrl.lastIndexOf('/');
+        const slashPos = rootUrl.indexOf('/');
         if (slashPos >= 0)
             rootUrl = rootUrl.substring(0, slashPos);
         if (!rootUrl) {
