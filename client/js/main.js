@@ -34,6 +34,7 @@
           });
       }
     });
+    
     DBHelper.registerDataSync();
   }
 })();

@@ -54,5 +54,6 @@
 .review-buttons-container button {
     width: 100px;
     margin: 16px;
+    height: 32px;
     font-weight: bold;
 }

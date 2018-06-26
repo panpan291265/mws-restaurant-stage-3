@@ -59,32 +59,45 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   let cacheKey = event.request.url;
-  if (cacheKey.startsWith(apiServer)) return fetch(event.request);
-  const responsePromise = new Promise((resolve, reject) => {
-    caches.open(cacheName).then(cache => {
-      cache.match(cacheKey).then(cachedResponse => {
-        if (cachedResponse) return resolve(cachedResponse);
-        fetch(event.request)
-          .then(networkResponse => {
-            // console.log(`Adding new cache item: '${cacheKey}'`);
-            cache.put(cacheKey, networkResponse.clone());
-            return resolve(networkResponse);
-          })
-          .catch(err => {
-            if (
-              event.request.url.includes('restaurant.html?id=') ||
-              event.request.url.includes('restaurant_review.html?id=')
-            ) {
-              cache.match('unavailable.html').then(unavailableResponse => {
-                return resolve(unavailableResponse);
-              });
-            } else {
-              return reject(err);
-            }
-          });
+  if (cacheKey.includes('.html?')) {
+    const pos = cacheKey.indexOf('?');
+    if (pos >= 0)
+      cacheKey = cacheKey.substring(0, pos);
+  }
+  /*
+  if (cacheKey.startsWith('http://localhost'))
+    console.log(`serviceWorker fetch, cacheKey : '${cacheKey}'`);
+  */
+  let responsePromise = null;
+  if (cacheKey.startsWith(apiServer)) {
+    responsePromise = fetch(event.request);
+  } else {
+    responsePromise = new Promise((resolve, reject) => {
+      caches.open(cacheName).then(cache => {
+        cache.match(cacheKey).then(cachedResponse => {
+          if (cachedResponse) return resolve(cachedResponse);
+          fetch(event.request)
+            .then(networkResponse => {
+              // console.log(`Adding new cache item: '${cacheKey}'`);
+              cache.put(cacheKey, networkResponse.clone());
+              return resolve(networkResponse);
+            })
+            .catch(err => {
+              if (
+                event.request.url.includes('restaurant.html?id=') ||
+                event.request.url.includes('restaurant_review.html?id=')
+              ) {
+                cache.match('unavailable.html').then(unavailableResponse => {
+                  return resolve(unavailableResponse);
+                });
+              } else {
+                return reject(err);
+              }
+            });
+        });
       });
     });
-  });
+  }
   event.respondWith(responsePromise);
 });
 

@@ -1,19 +1,43 @@
 /**
  * Register service worker
  */
-/*
+
 (function registerServiceWorker() {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (connection) {
+    connection.addEventListener('change', () => {
+      // console.log('connection:', connection);
+      if (connection.effectiveType && connection.downlink > 0) {
+        DBHelper.registerDataSync();
+      }
+    });
+  }
+  
   if (navigator.serviceWorker) {
+    /*
     navigator.serviceWorker.register('serviceWorker.min.js')
       .then(() => {
         // console.log('Service worker registered successfully.');
       })
       .catch(err => {
         console.error('Error registering service worker:', err);
-      })
+      });
+    */
+    navigator.serviceWorker.addEventListener('message', event => {
+      if (event.data && event.data.id === 'synchronize-data') {
+        DBHelper.synchronizeData()
+          .then(refresh => {
+            if (refresh) {
+              initRestaurantMap();
+            }
+          })
+          .catch(err => {
+            console.error('Error synchronizing data:', err);
+          });
+        }
+      });
   }
 })();
-*/
 
 /**
  * Initialize focus on window load.

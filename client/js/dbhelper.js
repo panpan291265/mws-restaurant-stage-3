@@ -55,9 +55,7 @@ class DBHelper {
           .objectStore('restaurants')
           .getAll()
           .then(localRestaurants => {
-            if (callback) {
-              callback(null, localRestaurants);
-            }
+            if (callback) callback(null, localRestaurants);
             if (reloadFromService) {
               fetch(DBHelper.DATASERVICE_RESTAURANTS_URL)
                 .then(response => response.json())
@@ -70,25 +68,18 @@ class DBHelper {
                         tx.objectStore('restaurants').put(r);
                       });
                     });
-                  if (callback) {
-                    callback(null, restaurants);
-                  }
+                  if (callback) callback(null, restaurants);
                 })
                 .catch(err => {
                   console.log(err);
-                  if (callback) {
-                    callback(null, localRestaurants);
-                  }
+                  if (callback) callback(null, localRestaurants);
                 });
             }
           });
       })
       .catch(err => {
-        if (callback) {
-          callback(err);
-        } else {
-          console.log(err);
-        }
+        if (callback) callback(err);
+        else console.log(err);
       });
   }
 
@@ -102,9 +93,7 @@ class DBHelper {
           .objectStore('reviews')
           .getAll()
           .then(localReviews => {
-            if (callback) {
-              callback(null, localReviews);
-            }
+            if (callback) callback(null, localReviews);
             if (reloadFromService) {
               fetch(DBHelper.DATASERVICE_REVIEWS_URL)
                 .then(response => response.json())
@@ -117,25 +106,18 @@ class DBHelper {
                         tx.objectStore('reviews').put(r);
                       });
                     });
-                  if (callback) {
-                    callback(null, reviews);
-                  }
+                  if (callback) callback(null, reviews);
                 })
                 .catch(err => {
                   console.log(err);
-                  if (callback) {
-                    callback(null, localReviews);
-                  }
+                  if (callback) callback(null, localReviews);
                 });
             }
           });
       })
       .catch(err => {
-        if (callback) {
-          callback(err);
-        } else {
-          console.log(err);
-        }
+        if (callback) callback(err);
+        else console.log(err);
       });
   }
 
@@ -223,14 +205,18 @@ class DBHelper {
             reviews = reviews.filter(r => r.restaurant_id === restaurantId);
             // sort reviews by updatedAt, createdAt descending
             reviews.sort((a, b) => {
-              if (a.updatedAt < b.updatedAt) {
+              const aUpdatedAt = new Date(a.updatedAt);
+              const bUpdatedAt = new Date(b.updatedAt);
+              if (aUpdatedAt < bUpdatedAt) {
                 return 1;
-              } else if (a.updatedAt > b.updatedAt) {
+              } else if (aUpdatedAt > bUpdatedAt) {
                 return -1;
               } else {
-                if (a.createdAt < b.createdAt) {
+                const aCreatedAt = new Date(a.createdAt);
+                const bCreatedAt = new Date(b.createdAt);
+                if (aCreatedAt < bCreatedAt) {
                   return 1;
-                } else if (a.createdAt > b.createdAt) {
+                } else if (aCreatedAt > bCreatedAt) {
                   return -1;
                 } else {
                   return 0;
@@ -361,8 +347,7 @@ class DBHelper {
    */
   static urlForRestaurantReview(restaurant, review) {
     let url = `${UrlHelper.ROOT_URL}restaurant_review.html?restaurant_id=${restaurant.id}`;
-    if (review)
-      url += `&review_id=${review.id}`;
+    if (review) url += `&review_id=${review.id}`;
     return url;
   }
 
@@ -422,13 +407,15 @@ class DBHelper {
 
   static registerDataSync() {
     if (navigator.serviceWorker) {
-      navigator.serviceWorker.ready
-        .then(registration => {
-          return registration.sync.register(`sync-${++syncCounter}`);
-        })
-        .catch(err => {
-          console.error('Error registering service worker:', err);
-        });
+      setTimeout(() => {
+        navigator.serviceWorker.ready
+          .then(registration => {
+            return registration.sync.register(`sync-${++syncCounter}`);
+          })
+          .catch(err => {
+            console.error('Error registering service worker:', err);
+          });
+      }, 0);
     }
   }
 
@@ -440,11 +427,15 @@ class DBHelper {
     }
     // console.log(`Network active, synchronizing data!`);
     return DBHelper.synchronizeRestaurants()
-      .then(() => DBHelper.synchronizeRestaurantReviews())
-      .then(() => true)
+      .then(() => {
+        return DBHelper.synchronizeRestaurantReviews();
+      })
+      .then(() => {
+        return Promise.resolve(true);
+      })
       .catch(err => {
         console.log(err);
-        return false;
+        return Promise.resolve(false);
       });
   }
 
@@ -452,12 +443,11 @@ class DBHelper {
     return fetch(DBHelper.DATASERVICE_RESTAURANTS_URL)
       .then(response => response.json())
       .then(restaurants => {
-        return dbPromise
+        dbPromise
           .then(db => {
             let tasks = [];
             const tx = db.transaction('restaurants', 'readwrite');
-            return tx
-              .objectStore('restaurants')
+            tx.objectStore('restaurants')
               .getAll()
               .then(localRestaurants => {
                 localRestaurants.forEach(localRestaurant => {
@@ -465,10 +455,10 @@ class DBHelper {
                   const restaurantUpdatedAtDT = new Date(restaurant.updatedAt);
                   const localRestaurantUpdatedAtDT = new Date(localRestaurant.updatedAt);
                   if (restaurantUpdatedAtDT > localRestaurantUpdatedAtDT) {
-                    console.log(`updating local restaurant ${localRestaurant.id} - ${localRestaurant.name}`);
+                    // console.log(`updating local restaurant ${localRestaurant.id} - ${localRestaurant.name}`);
                     tx.objectStore('restaurants').put(restaurant);
                   } else if (restaurantUpdatedAtDT < localRestaurantUpdatedAtDT) {
-                    console.log(`updating server restaurant ${restaurant.id} - ${restaurant.name}`);
+                    // console.log(`updating server restaurant ${restaurant.id} - ${restaurant.name}`);
                     tasks.push(
                       fetch(
                         `${DBHelper.DATASERVICE_RESTAURANTS_URL}/${
@@ -481,12 +471,13 @@ class DBHelper {
                     );
                   }
                 });
-                return tx.complete.then(() => {
-                  if (tasks && tasks.length > 0) {
-                    return Promise.all(tasks);
-                  } else {
-                    return Promise.resolve();
-                  }
+                tx.complete.then(() => {
+                  let serverTasksPromise = null;
+                  if (tasks && tasks.length > 0)
+                    serverTasksPromise = Promise.all(tasks);
+                  else
+                    serverTasksPromise = Promise.resolve();
+                  return serverTasksPromise;
                 });
               });
           })
@@ -505,91 +496,99 @@ class DBHelper {
     return fetch(DBHelper.DATASERVICE_REVIEWS_URL)
       .then(response => response.json())
       .then(reviews => {
-        return dbPromise
-          .then(db => {
-            let tasks = [];
-            const tx = db.transaction('reviews', 'readwrite');
-            tx.objectStore('reviews')
-              .getAll()
-              .then(localReviews => {
-                localReviews.forEach(localReview => {
-                  const review = reviews.find(x => x.id === localReview.id);
-                  if (!review) {
-                    if (DBHelper.isLocalReview(localReview)) {
-                      tasks.push(
-                        fetch(DBHelper.DATASERVICE_REVIEWS_URL, {
-                          method: 'POST',
-                          headers: {
-                            'content-type': 'application/json'
-                          },
-                          body: {
-                            restaurant_id: localReview.restaurant_id,
-                            name: localReview.name,
-                            rating: localReview.rating,
-                            comments: localReview.comments
-                          }
-                        })
-                      );
-                    } else {
-                      tx.objectStore('reviews').delete(localReview.id);
-                    }
-                  } else {
-                    if (review.updatedAt > localReview.updatedAt) {
-                      tx.objectStore('reviews').put(review);
-                    } else if (review.updatedAt < localReview.updatedAt) {
-                      tasks.push(
-                        fetch(`${DBHelper.DATASERVICE_REVIEWS_URL}/${review.id}`, {
-                          method: 'PUT',
-                          headers: {
-                            'content-type': 'application/json'
-                          },
-                          body: {
-                            name: localReview.name,
-                            rating: localReview.rating,
-                            comments: localReview.comments
-                          }
-                        })
-                      );
-                    }
-                  }
-                });
-                reviews.forEach(review => {
-                  const localReview = localReviews.find(x => x.id === review.id);
-                  if (!localReview) {
+        dbPromise.then(db => {
+          let tasks = [];
+          const tx = db.transaction('reviews', 'readwrite');
+          tx.objectStore('reviews')
+            .getAll()
+            .then(localReviews => {
+              localReviews.forEach(localReview => {
+                const review = reviews.find(x => x.id === localReview.id);
+                if (!review) {
+                  if (DBHelper.isLocalReview(localReview)) {
+                    // console.log(`adding new server review ${localReview.id} , restaurant ${localReview.restaurant_id}`);
+                    const payload = {
+                      restaurant_id: localReview.restaurant_id,
+                      name: localReview.name,
+                      rating: localReview.rating,
+                      comments: localReview.comments
+                    };
                     tasks.push(
-                      fetch(`${DBHelper.DATASERVICE_REVIEWS_URL}/${review.id}`, {
+                      fetch(DBHelper.DATASERVICE_REVIEWS_URL, {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify(payload)
+                      })
+                        .then(response => response.json())
+                        .then(addedReview => {
+                          const txTask = db.transaction('reviews', 'readwrite');
+                          txTask.objectStore('reviews').delete(localReview.id);
+                          txTask.objectStore('reviews').put(addedReview);
+                          return txTask.complete;
+                        })
+                    );
+                  } else {
+                    // console.log(`deleting server review ${localReview.id} , restaurant ${localReview.restaurant_id}`);
+                    tasks.push(
+                      fetch(`${DBHelper.DATASERVICE_REVIEWS_URL}/${localReview.id}`, {
                         method: 'DELETE'
                       })
                     );
                   }
-                });
-                return tx.complete.then(() => {
-                  let serverTasksPromise = null;
-                  if (tasks && tasks.length > 0) {
-                    serverTasksPromise = Promise.all(tasks);
-                  } else {
-                    serverTasksPromise = Promise.resolve();
+                } else {
+                  const reviewUpdatedAt = new Date(review.updatedAt);
+                  const localReviewUpdatedAt = new Date(localReview.updatedAt);
+                  if (reviewUpdatedAt > localReviewUpdatedAt) {
+                    // console.log(`updating local review ${review.id} , restaurant ${review.restaurant_id}`);
+                    tx.objectStore('reviews').put(review);
+                  } else if (reviewUpdatedAt < localReviewUpdatedAt) {
+                    // console.log(`updating server review ${review.id} , restaurant ${review.restaurant_id}`);
+                    const payload = {
+                      name: localReview.name,
+                      rating: localReview.rating,
+                      comments: localReview.comments
+                    };
+                    tasks.push(
+                      fetch(`${DBHelper.DATASERVICE_REVIEWS_URL}/${review.id}`, {
+                        method: 'PUT',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify(payload)
+                      })
+                        .then(response => response.json())
+                        .then(updatedReview => {
+                          const txTask = db.transaction('reviews', 'readwrite');
+                          txTask.objectStore('reviews').put(updatedReview);
+                          return txTask.complete;
+                        })
+                    );
                   }
-                  return serverTasksPromise.then(() => {
-                    const tx2 = db.transaction('reviews', 'readwrite');
-                    tx2.objectStore('reviews')
-                      .getAll()
-                      .then(localReviews => {
-                        localReviews.forEach(localReview => {
-                          if (DBHelper.isLocalReview(localReview)) {
-                            tx2.objectStore('reviews').delete(localReview.id);
-                          }
-                        });
-                      });
-                    return tx2.complete;
-                  });
-                });
+                }
               });
-          })
-          .catch(err => {
-            console.log(err);
-            return Promise.reject(err);
-          });
+              reviews.forEach(review => {
+                const localReview = localReviews.find(x => x.id === review.id);
+                if (!localReview) {
+                  // console.log(`deleting server review ${review.id} , restaurant ${review.restaurant_id}`);
+                  tasks.push(
+                    fetch(`${DBHelper.DATASERVICE_REVIEWS_URL}/${review.id}`, {
+                      method: 'DELETE'
+                    })
+                  );
+                }
+              });
+              tx.complete.then(() => {
+                let serverTasksPromise = null;
+                if (tasks && tasks.length > 0)
+                  serverTasksPromise = Promise.all(tasks);
+                else
+                  serverTasksPromise = Promise.resolve();
+                return serverTasksPromise;
+              });
+            })
+            .catch(err => {
+              console.log(err);
+              return Promise.reject(err);
+            });
+        });
       })
       .catch(err => {
         console.log(err);
@@ -598,20 +597,15 @@ class DBHelper {
   }
 
   static isLocalReview(review) {
-    if (!review)
-      throw new Error('isLocalReview: invalid review object!');
-    if (!review.id || review.id < 0)
-      return true;
-    else
-      return false;      
+    if (!review) throw new Error('isLocalReview: invalid review object!');
+    if (!review.id || review.id < 0) return true;
+    else return false;
   }
 
   static getNewReview(restaurant = null) {
     let lastLocalReviewId = localStorage.getItem('lastLocalReviewId');
-    if (lastLocalReviewId === undefined || lastLocalReviewId === null)
-      lastLocalReviewId = 0;
-    else
-      lastLocalReviewId = parseInt(lastLocalReviewId);
+    if (lastLocalReviewId === undefined || lastLocalReviewId === null) lastLocalReviewId = 0;
+    else lastLocalReviewId = parseInt(lastLocalReviewId);
     const review = {
       id: --lastLocalReviewId,
       restaurant_id: restaurant ? restaurant.id : null,
@@ -626,39 +620,33 @@ class DBHelper {
   }
 
   static saveReview(review) {
-    if (!review)
-      return Promise.reject('saveReview: invalid review object!');
-    if (!review.restaurant_id)
-      return Promise.reject('saveReview: restaurant id field is required!');
-    if (!review.name)
-      return Promise.reject('saveReview: review name field is required!');
+    if (!review) return Promise.reject('saveReview: invalid review object!');
+    if (!review.restaurant_id) return Promise.reject('saveReview: restaurant id field is required!');
+    if (!review.name) return Promise.reject('saveReview: review name field is required!');
     if (review.rating === undefined || review.rating === null)
       return Promise.reject('saveReview: review rating field is required!');
     if (review.rating < 0 || review.rating > 5)
       return Promise.reject('saveReview: review rating field must have a value between 0 and 5!');
-    if (!review.comments)
-      return Promise.reject('saveReview: review comments field is required!');
-    return dbPromise
-      .then(db => {
-        const tx = db.transaction('reviews', 'readwrite');
-        tx.objectStore('reviews').put(review);
-        // DBHelper.registerDataSync();
-        return tx.complete;
+    if (!review.comments) return Promise.reject('saveReview: review comments field is required!');
+    return dbPromise.then(db => {
+      const tx = db.transaction('reviews', 'readwrite');
+      tx.objectStore('reviews').put(review);
+      return tx.complete.then(() => {
+        DBHelper.registerDataSync();
       });
+    });
   }
 
   static deleteReview(review) {
-    if (!review)
-      return Promise.reject('saveReview: invalid review object!');
-    return dbPromise
-      .then(db => {
-        const tx = db.transaction('reviews', 'readwrite');
-        tx.objectStore('reviews').delete(review.id);
-        // DBHelper.registerDataSync();
-        return tx.complete;
+    if (!review) return Promise.reject('deleteReview: invalid review object!');
+    return dbPromise.then(db => {
+      const tx = db.transaction('reviews', 'readwrite');
+      tx.objectStore('reviews').delete(review.id);
+      return tx.complete.then(() => {
+        DBHelper.registerDataSync();
       });
+    });
   }
-
 }
 
 dbPromise = DBHelper.openDB();

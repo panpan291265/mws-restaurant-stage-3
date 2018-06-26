@@ -1,3 +1,30 @@
+(function registerServiceWorker() {
+  if (navigator.serviceWorker) {
+    /*
+    navigator.serviceWorker.register('serviceWorker.min.js')
+      .then(() => {
+        // console.log('Service worker registered successfully.');
+      })
+      .catch(err => {
+        console.error('Error registering service worker:', err);
+      });
+    */
+    navigator.serviceWorker.addEventListener('message', event => {
+      if (event.data && event.data.id === 'synchronize-data') {
+        DBHelper.synchronizeData()
+          .then(refresh => {
+            if (refresh) {
+              initalizeRestaurantReviewPage();
+            }
+          })
+          .catch(err => {
+            console.error('Error synchronizing data:', err);
+          });
+        }
+      });
+  }
+})();
+
 window.addEventListener('load', event => {
   initalizeRestaurantReviewPage();
 });
@@ -75,9 +102,12 @@ submitReview = (event, restaurant, review) => {
   review.name = inputName.value;
   review.rating = parseInt(inputRating.value);
   review.comments = inputComments.value;
+  review.updatedAt = new Date();
   DBHelper.saveReview(review).then(() => {
-    const restaurantUrl = DBHelper.urlForRestaurant(restaurant);
-    UrlHelper.goToUrl(restaurantUrl);
+    setTimeout(() => {
+      const restaurantUrl = DBHelper.urlForRestaurant(restaurant);
+      UrlHelper.goToUrl(restaurantUrl);
+    }, 500);
   })
   .catch(err => {
     alert(err);
